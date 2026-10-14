@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Hamleys Play WOW Match</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --red:#E4002B; --redDark:#B00021; --navy:#1B1B3A; --cream:#FFF6EC;
+  --ivory:#FFFFFF; --ivory2:#F2E9DE; --edge:#D8C7B4;
+  --good:#2E9E4A; --amber:#E8871E; --ink:#2A2A44;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  margin:0;
+  background:radial-gradient(130% 90% at 50% -10%,#FFFDF8 0%,var(--cream) 55%,#FBE7D5 100%);
+  font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  color:var(--ink);display:flex;flex-direction:column;align-items:center;
+  overflow:hidden;overscroll-behavior:none;touch-action:manipulation;
+  user-select:none;-webkit-user-select:none}
+
+#app{width:100%;max-width:560px;height:100dvh;
+  padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+  display:flex;flex-direction:column;gap:9px;position:relative;z-index:2}
+
+/* ---------- header ---------- */
+#head{display:flex;align-items:center;gap:10px;flex:none}
+#letter{
+  width:46px;height:46px;flex:none;border-radius:13px;
+  background:linear-gradient(160deg,var(--red),var(--redDark));
+  color:#fff;font-family:"Fredoka",sans-serif;font-weight:700;font-size:26px;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 0 color-mix(in srgb,var(--redDark) 75%,#000),0 7px 14px rgba(228,0,43,.3)}
+#headText{min-width:0;flex:1}
+#sectionName{font-family:"Fredoka",sans-serif;font-weight:700;
+  font-size:clamp(15px,4.2vw,20px);line-height:1.12;color:var(--navy);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sectionMeta{font-size:11px;font-weight:700;letter-spacing:.05em;
+  text-transform:uppercase;color:#9A8B7C;margin-top:2px}
+
+#progWrap{height:10px;border-radius:999px;background:rgba(27,27,58,.1);
+  overflow:hidden;border:2px solid rgba(27,27,58,.07);flex:none}
+#progBar{height:100%;width:0%;border-radius:999px;
+  background:linear-gradient(90deg,var(--red),color-mix(in srgb,var(--red) 70%,#fff));transition:width .35s ease}
+
+/* ---------- board ---------- */
+#boardWrap{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;
+  overflow-y:auto}
+#board{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-content:center;
+  padding:12px;background:linear-gradient(165deg,#FFFFFF,#FFF3E7);
+  border-radius:20px;border:2px solid rgba(228,0,43,.1);
+  box-shadow:0 10px 0 -4px rgba(228,0,43,.09),0 18px 34px rgba(27,27,58,.14);
+  max-width:100%}
+
+.tile{
+  border:none;padding:6px 4px;cursor:pointer;position:relative;
+  border-radius:13px;
+  background:linear-gradient(165deg,var(--ivory) 0%,var(--ivory) 55%,var(--ivory2) 100%);
+  box-shadow:0 4px 0 var(--edge),0 7px 13px rgba(27,27,58,.13);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  font-family:"Fredoka",sans-serif;color:var(--navy);overflow:hidden;
+  transition:transform .1s,box-shadow .1s,background .2s,opacity .3s}
+.tile .em{line-height:1}
+.tile .lb{font-weight:600;line-height:1.08;text-align:center;padding:0 2px;opacity:.88;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.tile:active:not(.done){transform:translateY(3px);box-shadow:0 1px 0 var(--edge)}
+.tile.sel{background:linear-gradient(165deg,#FFF0C9,#FFDF9B);
+  outline:3px solid var(--amber);outline-offset:-3px;transform:translateY(-3px)}
+.tile.done{background:linear-gradient(165deg,#E2F7E7,#BEEACC);box-shadow:0 4px 0 #8FCFA3;
+  cursor:default;opacity:.9}
+.tile.done::after{content:"✓";position:absolute;top:3px;right:6px;
+  font-size:12px;color:var(--good);font-weight:700}
+.tile.nope{animation:nope .42s ease}
+@keyframes nope{0%,100%{transform:none}25%{transform:translateX(-5px)}
+  50%{transform:translateX(5px)}75%{transform:translateX(-3px)}}
+.tile:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+
+/* ---------- reveal popup ---------- */
+#pop{position:fixed;inset:0;z-index:18;display:flex;align-items:center;justify-content:center;
+  padding:24px;background:rgba(27,27,58,.5);backdrop-filter:blur(4px);cursor:pointer}
+#pop[hidden]{display:none}
+#popCard{background:#fff;border-radius:22px;padding:26px 22px 18px;max-width:420px;width:100%;
+  text-align:center;box-shadow:0 22px 48px rgba(0,0,0,.32);border-top:8px solid var(--red);
+  animation:popIn .34s cubic-bezier(.16,1.3,.4,1) both;max-height:88vh;overflow-y:auto}
+@keyframes popIn{from{transform:scale(.74) translateY(16px);opacity:0}to{transform:none;opacity:1}}
+#popIcon{font-size:46px;line-height:1;display:block;margin-bottom:8px}
+#popLabel{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--red);margin-bottom:6px}
+#popTitle{font-family:"Fredoka",sans-serif;font-weight:700;font-size:20px;
+  color:var(--navy);margin-bottom:10px;line-height:1.2}
+#popText{font-size:16px;line-height:1.6;color:#39394F;font-weight:500;margin-bottom:14px}
+#popText b{color:var(--navy)}
+#popHint{font-size:12px;color:#A79A8C;font-weight:600}
+
+/* ---------- standard card below ---------- */
+#stdCard{flex:none;background:#fff;border-radius:16px;padding:12px 14px;
+  box-shadow:0 5px 16px rgba(27,27,58,.1);border-left:6px solid var(--red);
+  display:flex;flex-direction:column;gap:3px;max-height:23vh;overflow-y:auto}
+#stdCard.pop{animation:cardIn .3s cubic-bezier(.2,1.2,.5,1) both}
+@keyframes cardIn{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}
+#stdLabel{font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#A79A8C}
+#stdText{font-size:14px;line-height:1.5;color:#39394F;font-weight:500}
+#stdText b{color:var(--navy)}
+
+#controls{display:flex;gap:7px;flex:none}
+.ctl{flex:1;border:none;cursor:pointer;border-radius:13px;padding:12px 8px;
+  font-family:"Fredoka",sans-serif;font-weight:600;font-size:14px;
+  background:#fff;color:var(--navy);box-shadow:0 4px 0 var(--edge);
+  transition:transform .07s,box-shadow .07s}
+.ctl:active{transform:translateY(3px);box-shadow:0 1px 0 var(--edge)}
+.ctl:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+.ctl.on{background:var(--amber);color:#fff;box-shadow:0 4px 0 #A85D0C}
+
+/* ---------- overlay ---------- */
+#overlay{position:fixed;inset:0;z-index:20;background:rgba(27,27,58,.62);
+  backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;
+  padding:20px;overflow-y:auto}
+#overlay[hidden]{display:none}
+.card{background:#fff;border-radius:24px;padding:28px 22px 22px;max-width:440px;width:100%;
+  text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3);margin:auto;
+  animation:pop2 .28s cubic-bezier(.2,1.3,.5,1) both}
+@keyframes pop2{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+.card .emoji{font-size:52px;line-height:1;display:block;margin-bottom:8px}
+.card h1{font-family:"Fredoka",sans-serif;font-size:25px;margin:0 0 8px;color:var(--navy);font-weight:700}
+.card p{margin:0 0 16px;font-size:14.5px;line-height:1.55;color:#55556E}
+.card p b{color:var(--navy)}
+.bigLetter{width:74px;height:74px;margin:0 auto 12px;border-radius:20px;
+  background:linear-gradient(160deg,var(--red),var(--redDark));color:#fff;
+  font-family:"Fredoka",sans-serif;font-weight:700;font-size:42px;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 6px 0 color-mix(in srgb,var(--redDark) 75%,#000),0 10px 20px rgba(228,0,43,.3)}
+.btn{display:block;width:100%;border:none;cursor:pointer;font-family:"Fredoka",sans-serif;
+  font-weight:600;font-size:17px;color:#fff;background:var(--red);
+  padding:14px 26px;border-radius:14px;box-shadow:0 5px 0 var(--redDark);
+  transition:transform .07s,box-shadow .07s}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--redDark)}
+.btn.ghost{background:#fff;color:var(--navy);box-shadow:0 0 0 2px rgba(27,27,58,.16) inset;margin-top:9px}
+.rules{text-align:left;background:#FFF6EC;border-radius:14px;padding:14px 16px;
+  margin:0 0 16px;font-size:13.5px;line-height:1.7;color:#4B4B63}
+.rules b{color:var(--navy)}
+.recap{text-align:left;background:#FFF6EC;border-radius:14px;padding:13px 15px;
+  margin:0 0 16px;max-height:250px;overflow-y:auto}
+.recap li{font-size:13px;line-height:1.55;color:#4B4B63;margin-bottom:10px}
+.recap li:last-child{margin-bottom:0}
+.recap li b{color:var(--navy)}
+
+/* ---------- section menu ---------- */
+.secList{display:flex;flex-direction:column;gap:8px;margin:0 0 16px}
+.secBtn{display:flex;align-items:center;gap:11px;width:100%;border:none;cursor:pointer;
+  background:#FFF6EC;border-radius:13px;padding:11px 13px;text-align:left;
+  transition:background .15s}
+.secBtn:hover{background:#FFEEDD}
+.secBtn .sq{width:34px;height:34px;flex:none;border-radius:9px;
+  background:linear-gradient(160deg,var(--red),var(--redDark));color:#fff;
+  font-family:"Fredoka",sans-serif;font-weight:700;font-size:18px;
+  display:flex;align-items:center;justify-content:center}
+.secBtn.doneSec .sq{background:linear-gradient(160deg,var(--good),#1F7A36)}
+.secBtn .nm{font-family:"Fredoka",sans-serif;font-weight:600;font-size:14px;
+  color:var(--navy);line-height:1.15}
+.secBtn .st{font-size:11px;color:#9A8B7C;font-weight:600;margin-top:2px}
+
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));
+  transform:translateX(-50%) translateY(14px);z-index:15;
+  font-family:"Fredoka",sans-serif;font-weight:700;font-size:15px;padding:11px 19px;
+  border-radius:14px;color:#fff;background:var(--navy);
+  box-shadow:0 10px 26px rgba(0,0,0,.3);opacity:0;pointer-events:none;
+  transition:opacity .18s,transform .28s cubic-bezier(.2,1.4,.5,1);white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.good{background:var(--good)}
+
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;transition-duration:.01ms !important}}
+@media (max-height:700px){#stdCard{padding:10px 12px;max-height:20vh}#stdText{font-size:13px}
+  .card{padding:22px 18px}.card .emoji{font-size:42px}}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div id="head">
+    <div id="letter">A</div>
+    <div id="headText">
+      <div id="sectionName">Attract</div>
+      <div id="sectionMeta">Section 1 of 7 · 0 of 6 matched</div>
+    </div>
+  </div>
+
+  <div id="progWrap"><div id="progBar"></div></div>
+
+  <div id="boardWrap"><div id="board"></div></div>
+
+  <div id="stdCard">
+    <div id="stdLabel">Ready</div>
+    <div id="stdText">Find the two matching tiles. Each pair you match reveals the Hamleys Play standard for that behaviour.</div>
+  </div>
+
+  <div id="controls">
+    <button class="ctl" id="menuBtn">📚 Sections</button>
+    <button class="ctl" id="recapBtn">📋 Standards</button>
+    <button class="ctl" id="sndBtn" style="flex:0 0 56px" aria-label="Toggle sound">🔊</button>
+  </div>
+</div>
+
+<div id="pop" hidden>
+  <div id="popCard">
+    <span id="popIcon">🧸</span>
+    <div id="popLabel"></div>
+    <div id="popTitle"></div>
+    <div id="popText"></div>
+    <div id="popHint">Tap anywhere to continue</div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div id="overlay"><div class="card" id="card"></div></div>
+
+<script>
+/* ============================================================
+   1. CONFIG
+   ============================================================ */
+const CONFIG = {
+  title    : "Hamleys Play WOW Match",
+  soundKey : "hamleys_play_match_sound"
+};
+
+/* ============================================================
+   2. CONTENT — the seven AWESOME sections.
+   Each entry is a tile face AND the standard revealed when its pair
+   is matched. Standards are written as EXPECTATIONS for staff, in the
+   second person — not as audit questions.
+
+   Source: Hamleys Retail Mystery Visit 2026-2027 audit.
+   Every standard carries the audit question number it comes from.
+   A few are marked "derived" — see HANDOFF before using those live.
+   ============================================================ */
+const SECTIONS = [
+  {
+    letter:"A", color:"#0E9AA7", name:"Attract",
+    intro:"Before a single customer walks in, the space and the team already have to say 'come and play'. Floor, feel and Play Pal grooming.",
+    items:[
+      {em:"🚶", label:"Floor walk", title:"Walk the floor before opening", q:"Attract",
+       text:"Walk the floor as a team before opening and check what customers see first: <b>play signage visible and lights working</b>, exterior neat and attractive, play area clean and well-organised, fixtures and attractions well-maintained. These details decide whether a family walks in or walks past."},
+      {em:"🌡️", label:"Right ambience", title:"One sense each, all answers Yes", q:"Attract",
+       text:"Give each team member one sense to check: <b>temperature comfortable, lights working, store smelling pleasant, music cheerful</b>. If even one answer is \"No\", fix it before the first customer arrives."},
+      {em:"✨", label:"Fashionably Fun", title:"Our grooming mantra", q:"Attract",
+       text:"<b>Fashionably Fun</b> is our grooming mantra. Look the part: uniform complete, clean and neatly ironed, with warm, excited body language. <b>At least two Play Pals must always be in Play character costumes</b> on the floor. Our three differentiators are <b>fun hair, nail art and dramatic eye makeup</b>."},
+      {em:"💇", label:"Fun hair", title:"Style it up", q:"Attract",
+       text:"Hair neatly styled as per brand guidelines, with black or colourful fun accessories. <b>No oiling at work</b>: use styling products instead, and be playful with it."},
+      {em:"💅", label:"Nail art", title:"Make them pop", q:"Attract",
+       text:"Nails <b>filed and well maintained at all times</b>. Neatly painted nail art is a great add-on. Never chipped, and never done on one hand only."},
+      {em:"👁️", label:"Dramatic eyes", title:"Go bold with your eyes", q:"Attract",
+       text:"Use eyeliner and definition for standout eyes, and experiment with colour and drama, such as smokey eyes. Keep it <b>fresh, vibrant and well blended</b>."}
+    ]
+  },
+  {
+    letter:"W", color:"#E85D9A", name:"Welcome",
+    intro:"The welcome begins the moment a child looks your way. Get it right and the whole visit starts happy.",
+    items:[
+      {em:"🧎", label:"Get to their height", title:"Come down to the child", q:"Welcome",
+       text:"Get down to the child's height and <b>make eye contact</b>. Acknowledge the child first, then the adults."},
+      {em:"😁", label:"Enthusiastic smile", title:"Mean it", q:"Welcome",
+       text:"Wear an <b>enthusiastic smile</b> and match the child's energy. A flat, routine greeting is not a welcome."},
+      {em:"🐻", label:"Bear Wave", title:"The Bear Wave greeting", q:"Welcome",
+       text:"Greet with a <b>Bear Wave, a High Five or a Fist Bump</b>. Let the child choose which one they want."},
+      {em:"🌷", label:"Magical Garden words", title:"Say the line", q:"Welcome",
+       text:"Say it out loud: <b>\"Welcome to the Magical Garden of Play!\"</b>"},
+      {em:"📏", label:"Height check", title:"A quick, fun height check", q:"Welcome",
+       text:"Offer a <b>quick, fun height check</b> as pre-play engagement. It sets the tone for the whole visit and eases in first-timers and shy kids."},
+      {em:"🪄", label:"Magic trick", title:"Break the ice with magic", q:"Welcome",
+       text:"Show a <b>cool magic trick</b>, or invite the child into a quick game or surprise. Make it personal, never scripted."}
+    ]
+  },
+  {
+    letter:"EN", color:"#E8871E", name:"Entry",
+    intro:"Entry is where curiosity turns into excitement. Clear information and calm queues make every customer feel valued before play begins.",
+    items:[
+      {em:"💬", label:"Share the purpose", title:"Say why you are asking", q:"Entry",
+       text:"Whenever you ask for information, <b>share the purpose</b> of it. Customers are far happier giving details when they know why."},
+      {em:"🔒", label:"Respect privacy", title:"Comfort and privacy first", q:"Entry",
+       text:"Respect the customer's <b>comfort and privacy</b> at all times, especially while collecting details."},
+      {em:"🙏", label:"Thank every time", title:"Every customer, every visit", q:"Entry",
+       text:"Be clear and concise, prioritise the key details, and <b>thank the customer every single time</b>."},
+      {em:"🤔", label:"Confused customer", title:"Walk them through", q:"Entry",
+       text:"A customer is confused about entry? <b>Walk them through it</b> calmly, step by step. Friendly and helpful eases waiting stress."},
+      {em:"🧸", label:"Toys in hand", title:"Guide them to billing", q:"Entry",
+       text:"A customer is browsing with toys in hand? <b>Guide them to billing</b> before they head to the play area."},
+      {em:"💳", label:"Hands full", title:"Card in one hand, child in the other", q:"Entry",
+       text:"A parent has a card in one hand and a child in the other? <b>Step in and help</b>. And if someone is heading straight for the gate, guide them to entry first."}
+    ]
+  },
+  {
+    letter:"S", color:"#C0392B", name:"Safety",
+    intro:"The safety of children is of prime importance. It is a legal mandate, it protects our reputation, and it is simply good business.",
+    items:[
+      {em:"🛡️", label:"Safety first", title:"Why safety comes first", q:"Safety",
+       text:"The safety of children is of <b>prime importance</b>: for our reputation, as a legal mandate and for good business sense. One incident can undo everything else we do right."},
+      {em:"⚖️", label:"POCSO Act", title:"It is the law", q:"Safety",
+       text:"Child safety is required by the <b>POCSO Act, 2012</b>. It applies to every single team member, with no exceptions."},
+      {em:"🎓", label:"Safety course", title:"RBL Hamleys Child Safety", q:"Safety",
+       text:"Complete <b>Course ID 99797</b> on the LMS. It is mandatory for all play team members and covers the POCSO Act, fire and electrical safety, common hazards on the floor, and an assessment."},
+      {em:"🔦", label:"Daily safety walk", title:"Check before you call the floor ready", q:"Safety",
+       text:"Walk the store as a team and check for <b>hazards or maintenance issues, water or sand spillage, attractions and equipment working, and child entry and exit strictly monitored</b>. Discuss and fix any issue on the spot."}
+    ]
+  },
+  {
+    letter:"O1", color:"#7C4DBE", name:"Out For Play: Buddies I",
+    intro:"Every Play Pal becomes a Garden Buddy, assigned to their own play area or attraction. Introduce yourself as the character, give a quick tour, explain how to play, and keep the child safe.",
+    items:[
+      {em:"🐸", label:"Captain Frog", title:"Captain Frog, the fearless saviour", q:"Garden Buddy · Frog",
+       text:"A warrior, extremely fit, strong and courageous. <b>Saviour of the garden and its ecosystem.</b> Play him with brave, protective energy."},
+      {em:"📖", label:"Abby", title:"Abby, the helpful reader", q:"Garden Buddy · Bunny",
+       text:"Loves <b>reading and helping other garden buddies</b>, especially with her bright ideas. Play her warm and helpful."},
+      {em:"🐢", label:"Wisey", title:"Wisey, the storyteller", q:"Garden Buddy · Turtle",
+       text:"The <b>oldest member</b> of the garden ecosystem, well-travelled and a great storyteller."},
+      {em:"🔧", label:"Junior", title:"Junior, the fixer", q:"Garden Buddy · Bunny",
+       text:"A <b>handyman</b> who loves fixing things in the garden and is known for his craftsmanship."},
+      {em:"🐝", label:"Princess Bee", title:"Princess Bee, the drama queen", q:"Garden Buddy · Honeybee",
+       text:"Smart and an absolute drama queen. <b>Great at managing parties and events</b> and enjoys performances."},
+      {em:"🦜", label:"Spiffy", title:"Spiffy, from London", q:"Garden Buddy · Parrot",
+       text:"From London. A <b>great dancer</b>, extremely poised and fashionable."}
+    ]
+  },
+  {
+    letter:"O2", color:"#7C4DBE", name:"Out For Play: Buddies II",
+    intro:"Six more Garden Buddies. Know who runs which corner of the garden, so every child meets a character that feels real.",
+    items:[
+      {em:"🎩", label:"Juju", title:"Juju, the magician", q:"Garden Buddy · Chipmunk",
+       text:"A <b>talented magician</b> who likes to play pranks and tricks on others."},
+      {em:"🦋", label:"Shimmy", title:"Shimmy, always dancing", q:"Garden Buddy · Butterfly",
+       text:"Happy, colourful and <b>always dancing around</b>. Kind and principled."},
+      {em:"🧁", label:"Mrs. Hooper", title:"Mrs. Hooper, the baker", q:"Garden Buddy · Bunny",
+       text:"Loves <b>baking</b> and managing the green house activities."},
+      {em:"🎤", label:"Chime", title:"Chime, the singer", q:"Garden Buddy · Cuckoo",
+       text:"Colourful, talented and shy, with a <b>magical voice</b>. Keeps singing rhymes and melodies for all the garden buddies."},
+      {em:"🌱", label:"Mr. Hooper", title:"Mr. Hooper, the host", q:"Garden Buddy · Bunny",
+       text:"A kind gardener, <b>host and caretaker</b> of the garden of play."},
+      {em:"🕺", label:"Snazzy", title:"Snazzy, the pro dancer", q:"Garden Buddy · Parrot",
+       text:"Well-mannered and a <b>pro dancer</b>. Best friends with the Hooper family."}
+    ]
+  },
+  {
+    letter:"M", color:"#2E9E4A", name:"Magical Pillars",
+    intro:"Fun, fantasy and freshness for every child. These seven pillars bring the mystical Hamleys Play experience to life.",
+    items:[
+      {em:"🎵", label:"Singing", title:"Pillar 1: Singing", q:"Pillar",
+       text:"Sing rhymes and melodies with the children. It brings the garden to life. <b>Singing</b> is one of the 7 magical pillars."},
+      {em:"📚", label:"Storytelling", title:"Pillar 2: Storytelling", q:"Pillar",
+       text:"Tell stories that pull children into the garden. <b>Storytelling</b> is one of the 7 magical pillars."},
+      {em:"💃", label:"Dancing", title:"Pillar 3: Dancing", q:"Pillar",
+       text:"Get the children moving and dancing with you. <b>Dancing</b> is one of the 7 magical pillars."},
+      {em:"🎁", label:"Surprises", title:"Pillar 4: Surprises", q:"Pillar",
+       text:"Create little moments the child did not see coming. <b>Surprises</b> are one of the 7 magical pillars."},
+      {em:"🎭", label:"Theatrics", title:"Pillar 5: Theatrics", q:"Pillar",
+       text:"Be dramatic and in character. <b>Theatrics</b> is one of the 7 magical pillars."},
+      {em:"🎲", label:"Games & Activities", title:"Pillars 6 and 7: Games and Activities", q:"Pillar",
+       text:"Run quick, fun <b>games</b> that include every child, and offer hands-on <b>activities</b> they can do and enjoy. Together they complete the 7 magical pillars."}
+    ]
+  },
+  {
+    letter:"EX", color:"#2563C9", name:"Exit",
+    intro:"The goodbye ritual matters just as much as the welcome. Send every child off with warmth and a genuine reason to come back.",
+    items:[
+      {em:"🎉", label:"We had fun", title:"Say it warmly", q:"Exit",
+       text:"Say: <b>\"We had a lot of fun playing with you today!\"</b>"},
+      {em:"👋", label:"See you soon", title:"Bye for now", q:"Exit",
+       text:"Say: <b>\"See you again soon, bye for now!\"</b>"},
+      {em:"🐾", label:"Favourite Buddy", title:"Give them a reason to return", q:"Exit",
+       text:"Say: <b>\"Next time you may meet your favourite Garden Buddy!\"</b> Give every child a genuine reason to visit again."},
+      {em:"🤝", label:"Right person", title:"Safe handover", q:"Exit",
+       text:"<b>Verify details</b> and make sure the child is handed over to the right person, every time."},
+      {em:"👟", label:"Locker check", title:"Belongings and shoes", q:"Exit",
+       text:"Remind families to <b>collect their belongings and shoes from the locker</b> before they leave."}
+    ]
+  }
+];
+
+/* ============================================================
+   3. AUDIO — synthesised with the Web Audio API. No audio files, so
+   the page stays self-contained and works offline. Mobile browsers
+   block audio until a user gesture, so the context builds on tap.
+   ============================================================ */
+const AUDIO={ctx:null,master:null,musicGain:null,sfxGain:null,on:true,playing:false,step:0,timer:null,nextTime:0};
+function armAudio(){
+  if(AUDIO.ctx){ if(AUDIO.ctx.state==="suspended") AUDIO.ctx.resume(); return; }
+  const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
+  AUDIO.ctx=new AC();
+  AUDIO.master=AUDIO.ctx.createGain(); AUDIO.musicGain=AUDIO.ctx.createGain(); AUDIO.sfxGain=AUDIO.ctx.createGain();
+  AUDIO.master.gain.value=AUDIO.on?1:0;
+  AUDIO.musicGain.gain.value=0.10;   // quieter than the other games: a
+  AUDIO.sfxGain.gain.value=0.5;      // trainer is talking over this one
+  AUDIO.musicGain.connect(AUDIO.master); AUDIO.sfxGain.connect(AUDIO.master);
+  AUDIO.master.connect(AUDIO.ctx.destination);
+  startMusic();
+}
+function tone(freq,at,dur,type,gain,bus){
+  if(!AUDIO.ctx) return;
+  const o=AUDIO.ctx.createOscillator(),g=AUDIO.ctx.createGain();
+  o.type=type||"sine"; o.frequency.setValueAtTime(freq,at);
+  g.gain.setValueAtTime(0.0001,at);
+  g.gain.exponentialRampToValueAtTime(gain,at+0.015);
+  g.gain.exponentialRampToValueAtTime(0.0001,at+dur);
+  o.connect(g); g.connect(bus||AUDIO.sfxGain); o.start(at); o.stop(at+dur+0.03);
+}
+const SFX={
+  pick(){ if(!AUDIO.ctx)return; const t=AUDIO.ctx.currentTime; tone(640,t,0.07,"square",0.09); },
+  match(n){ if(!AUDIO.ctx)return; const t=AUDIO.ctx.currentTime;
+    const b=523.25*Math.pow(2,(n||0)/26);
+    tone(b,t,0.18,"triangle",0.22); tone(b*1.25,t+0.06,0.16,"sine",0.13); tone(b*1.5,t+0.12,0.2,"sine",0.09); },
+  wrong(){ if(!AUDIO.ctx)return; const t=AUDIO.ctx.currentTime;
+    tone(260,t,0.13,"triangle",0.12); tone(210,t+0.06,0.14,"sine",0.09); },
+  section(){ if(!AUDIO.ctx)return; const t=AUDIO.ctx.currentTime;
+    [523.25,659.25,783.99].forEach((f,i)=>tone(f,t+i*0.1,0.4,"triangle",0.22)); },
+  finish(){ if(!AUDIO.ctx)return; const t=AUDIO.ctx.currentTime;
+    [523.25,659.25,783.99,1046.5,1318.5].forEach((f,i)=>tone(f,t+i*0.11,0.55,"triangle",0.25)); }
+};
+const CHORDS=[[261.63,329.63,392.00,493.88],[220.00,261.63,329.63,392.00],
+              [174.61,220.00,261.63,329.63],[196.00,246.94,293.66,392.00]];
+const STEP=0.52;
+function scheduleMusic(){
+  if(!AUDIO.ctx||!AUDIO.playing) return;
+  const now=AUDIO.ctx.currentTime;
+  while(AUDIO.nextTime<now+0.7){
+    const ch=CHORDS[Math.floor(AUDIO.step/4)%CHORDS.length], beat=AUDIO.step%4;
+    tone(ch[beat]*2,AUDIO.nextTime,0.9,"sine",0.13,AUDIO.musicGain);
+    if(beat===0) tone(ch[0]/2,AUDIO.nextTime,1.7,"triangle",0.18,AUDIO.musicGain);
+    AUDIO.nextTime+=STEP; AUDIO.step++;
+  }
+}
+function startMusic(){
+  if(!AUDIO.ctx||AUDIO.playing) return;
+  AUDIO.playing=true; AUDIO.nextTime=AUDIO.ctx.currentTime+0.1;
+  AUDIO.timer=setInterval(scheduleMusic,180); scheduleMusic();
+}
+function setSound(on){
+  AUDIO.on=on;
+  if(AUDIO.master) AUDIO.master.gain.value=on?1:0;
+  const b=document.getElementById("sndBtn");
+  b.textContent=on?"🔊":"🔇"; b.classList.toggle("on",!on);
+  try{ localStorage.setItem(CONFIG.soundKey,on?"1":"0"); }catch(e){}
+}
+
+/* ============================================================
+   4. STATE
+   ============================================================ */
+let secIndex=0, tiles=[], first=null, busy=false;
+let matchedHere=0, collected=[], doneSections=[];
+
+const boardEl=document.getElementById("board");
+const stdLbl=document.getElementById("stdLabel");
+const stdTxt=document.getElementById("stdText");
+const stdCd=document.getElementById("stdCard");
+const popEl=document.getElementById("pop");
+let pendingEnd=null, popTimer=null;
+
+const shuffle=a=>{ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+
+/* ============================================================
+   5. RENDER
+   ============================================================ */
+function buildSection(i){
+  secIndex=i;
+  const S=SECTIONS[i];
+  const deck=shuffle(S.items.concat(S.items).map((t,k)=>({...t})));
+  tiles=deck.map((t,k)=>({...t, idx:k, done:false, el:null}));
+  matchedHere=0; first=null; busy=false;
+
+  // tile size: fit the widest sensible grid without shrinking past a
+  // comfortable tap target. All tiles are visible, so they must be readable.
+  const wrapW=Math.min(document.getElementById("boardWrap").clientWidth||360,540)-24;
+  const wrapH=(document.getElementById("boardWrap").clientHeight||400)-24;
+  const n=tiles.length;
+  const cols=n<=8?4:4;
+  const rows=Math.ceil(n/cols);
+  let w=Math.floor((wrapW-(cols-1)*8)/cols);
+  const maxByH=Math.floor((wrapH-(rows-1)*8)/rows/1.18);
+  w=Math.max(58,Math.min(w,maxByH,124));
+  const h=Math.round(w*1.18);
+
+  boardEl.innerHTML="";
+  boardEl.style.maxWidth=(cols*w+(cols-1)*8+24)+"px";
+  tiles.forEach(t=>{
+    const b=document.createElement("button");
+    b.className="tile"; b.dataset.i=t.idx;
+    b.style.width=w+"px"; b.style.height=h+"px";
+    b.innerHTML=`<span class="em" style="font-size:${Math.round(w*0.36)}px">${t.em}</span>
+                 <span class="lb" style="font-size:${Math.max(8,w*0.135)}px">${t.label}</span>`;
+    b.setAttribute("aria-label",t.label);
+    boardEl.appendChild(b);
+    t.el=b;
+  });
+
+  setTheme(S.color);
+  document.getElementById("letter").textContent=S.letter;
+  document.getElementById("sectionName").textContent=S.name;
+  updateHead();
+  stdLbl.textContent="Ready";
+  stdTxt.textContent="Find the two matching tiles. Each pair you match reveals the Hamleys Play standard for that behaviour.";
+}
+
+function updateHead(){
+  const S=SECTIONS[secIndex];
+  document.getElementById("sectionMeta").textContent =
+    `Section ${secIndex+1} of ${SECTIONS.length} · ${matchedHere} of ${S.items.length} matched`;
+  document.getElementById("progBar").style.width=(matchedHere/S.items.length*100)+"%";
+}
+
+function showStandard(t){
+  stdLbl.textContent=`${t.title} · ${t.q}`;
+  stdTxt.innerHTML=t.text;
+  stdCd.classList.remove("pop"); void stdCd.offsetWidth; stdCd.classList.add("pop");
+}
+function showPop(t){
+  document.getElementById("popIcon").textContent=t.em;
+  document.getElementById("popLabel").textContent=SECTIONS[secIndex].letter+" · "+SECTIONS[secIndex].name;
+  document.getElementById("popTitle").textContent=t.title;
+  document.getElementById("popText").innerHTML=t.text;
+  const c=document.getElementById("popCard");
+  c.style.animation="none"; void c.offsetWidth; c.style.animation="";
+  popEl.hidden=false;
+  clearTimeout(popTimer);
+  // long auto-dismiss: the trainer is talking over this, so it must not
+  // vanish mid-sentence. 45s is a safety net, not a pace-setter.
+  popTimer=setTimeout(closePop,45000);
+}
+function closePop(){
+  if(popEl.hidden) return;
+  clearTimeout(popTimer); popEl.hidden=true;
+  if(pendingEnd){ const fn=pendingEnd; pendingEnd=null; setTimeout(fn,260); }
+}
+popEl.addEventListener("click", closePop);
+
+let toastId=null;
+function toast(msg,good){
+  const t=document.getElementById("toast");
+  t.textContent=msg; t.classList.toggle("good",!!good); t.classList.add("show");
+  clearTimeout(toastId); toastId=setTimeout(()=>t.classList.remove("show"),1500);
+}
+
+/* ============================================================
+   6. PLAY — no timer, no lives. A wrong pair simply does nothing.
+   ============================================================ */
+function tap(t){
+  if(busy||t.done) return;
+  if(!popEl.hidden) return;
+  armAudio();
+
+  if(first && first.idx===t.idx){ first=null; t.el.classList.remove("sel"); return; }
+
+  if(!first){ first=t; t.el.classList.add("sel"); SFX.pick(); return; }
+
+  const a=first, b=t;
+  first=null;
+  a.el.classList.remove("sel");
+
+  if(a.label===b.label){
+    a.done=true; b.done=true;
+    a.el.classList.add("done"); b.el.classList.add("done");
+    matchedHere++;
+    collected.push({...a, section:SECTIONS[secIndex].letter});
+    SFX.match(collected.length);
+    updateHead();
+    showStandard(a);
+    showPop(a);
+    if(matchedHere>=SECTIONS[secIndex].items.length){
+      if(!doneSections.includes(secIndex)) doneSections.push(secIndex);
+      pendingEnd = sectionComplete;
+    }
+    return;
+  }
+
+  // wrong pair — a nudge, nothing more. Nothing is lost and nothing ends.
+  busy=true;
+  SFX.wrong();
+  b.el.classList.add("sel");
+  [a,b].forEach(x=>x.el.classList.add("nope"));
+  setTimeout(()=>{
+    [a,b].forEach(x=>{ x.el.classList.remove("nope","sel"); });
+    busy=false;
+  },440);
+}
+
+boardEl.addEventListener("click", e=>{
+  const el=e.target.closest(".tile");
+  if(!el) return;
+  const t=tiles[+el.dataset.i];
+  if(t) tap(t);
+});
+
+document.getElementById("sndBtn").onclick=()=>{ armAudio(); setSound(!AUDIO.on); if(AUDIO.on) SFX.pick(); };
+
+document.getElementById("recapBtn").onclick=()=>{
+  if(!collected.length){ toast("No standards revealed yet"); return; }
+  showCard(`
+    <span class="emoji">📋</span>
+    <h1>Standards so far</h1>
+    <p>${collected.length} revealed across ${new Set(collected.map(c=>c.section)).size} section${new Set(collected.map(c=>c.section)).size===1?"":"s"}.</p>
+    <ul class="recap">${collected.map(c=>`<li><b>${c.section} · ${c.title}.</b> ${c.text.replace(/<\/?b>/g,"")}</li>`).join("")}</ul>
+    <button class="btn" id="close">Back to the board</button>
+  `);
+  document.getElementById("close").onclick=hideCard;
+};
+
+document.getElementById("menuBtn").onclick=()=>sectionMenu();
+
+/* ============================================================
+   7. SCREENS
+   ============================================================ */
+const overlay=document.getElementById("overlay"), card=document.getElementById("card");
+function showCard(html){ card.innerHTML=html; overlay.hidden=false; overlay.scrollTop=0; }
+function hideCard(){ overlay.hidden=true; }
+
+function welcomeScreen(){
+  showCard(`
+    <span class="emoji">🧸</span>
+    <h1>${CONFIG.title}</h1>
+    <p>The AWESOME service journey for a Hamleys Play Pal, one level per stage.</p>
+    <div class="rules">
+      • All tiles are <b>face up</b>. Nothing to memorise<br>
+      • Tap the two tiles that match. Each pair reveals the <b>Hamleys standard</b> for that behaviour<br>
+      • <b>No timer.</b> A wrong pair costs nothing — keep going<br>
+      • Finish a section and you'll be asked before moving to the next<br><br>
+      Every standard is drawn from the <b>Hamleys Play WOW Cards</b>.
+    </div>
+    <button class="btn" id="go">Start with Attract</button>
+    <button class="btn ghost" id="pick">Choose a section</button>
+  `);
+  document.getElementById("go").onclick=()=>{ hideCard(); armAudio(); startSection(0); };
+  document.getElementById("pick").onclick=()=>{ armAudio(); sectionMenu(); };
+}
+
+function setTheme(c){
+  const r=document.documentElement.style;
+  r.setProperty("--red",c);
+  r.setProperty("--redDark","color-mix(in srgb,"+c+" 78%,#000)");
+}
+function sectionIntro(i){
+  setTheme(SECTIONS[i].color);
+  const S=SECTIONS[i];
+  showCard(`
+    <div class="bigLetter">${S.letter}</div>
+    <h1>${S.name}</h1>
+    <p>${S.intro}</p>
+    <p><b>${S.items.length} standards</b> to uncover in this section.</p>
+    <button class="btn" id="go">Start this section</button>
+  `);
+  document.getElementById("go").onclick=()=>{ hideCard(); buildSection(i); };
+}
+
+function startSection(i){ sectionIntro(i); }
+
+/* Section complete → ask before moving on. This is the trainer's
+   natural pause point: they talk, then move the room on together. */
+function sectionComplete(){
+  SFX.section();
+  const S=SECTIONS[secIndex]; setTheme(S.color);
+  const next=SECTIONS[secIndex+1];
+  const allDone=doneSections.length>=SECTIONS.length;
+
+  if(!next || allDone){
+    if(allDone) return finishScreen();
+  }
+
+  showCard(`
+    <span class="emoji">✅</span>
+    <h1>${S.letter} · ${S.name} complete</h1>
+    <p>All <b>${S.items.length} standards</b> uncovered. ${collected.length} of ${SECTIONS.reduce((a,s)=>a+s.items.length,0)} across the whole of AWESOME.</p>
+    ${next?`<p>Do you want to start the <b>${next.letter} · ${next.name}</b> section?</p>
+      <button class="btn" id="go">Start ${next.name}</button>`:""}
+    <button class="btn ghost" id="review">Review this section's standards</button>
+    <button class="btn ghost" id="menu">Choose a different section</button>
+  `);
+  const g=document.getElementById("go");
+  if(g) g.onclick=()=>{ hideCard(); startSection(secIndex+1); };
+  document.getElementById("menu").onclick=()=>sectionMenu();
+  document.getElementById("review").onclick=()=>{
+    const mine=collected.filter(c=>c.section===S.letter);
+    showCard(`
+      <div class="bigLetter">${S.letter}</div>
+      <h1>${S.name}</h1>
+      <ul class="recap">${mine.map(c=>`<li><b>${c.title}</b> <span style="color:#A79A8C">${c.q}</span><br>${c.text.replace(/<\/?b>/g,"")}</li>`).join("")}</ul>
+      <button class="btn" id="back">Back</button>
+    `);
+    document.getElementById("back").onclick=()=>sectionComplete();
+  };
+}
+
+function sectionMenu(){
+  showCard(`
+    <span class="emoji">📚</span>
+    <h1>AWESOME sections</h1>
+    <p>Jump to any section — the order is yours to set.</p>
+    <div class="secList">
+      ${SECTIONS.map((s,i)=>`
+        <button class="secBtn ${doneSections.includes(i)?"doneSec":""}" data-i="${i}">
+          <span class="sq">${s.letter}</span>
+          <span><span class="nm">${s.name}</span>
+          <span class="st">${s.items.length} standards${doneSections.includes(i)?" · complete":""}</span></span>
+        </button>`).join("")}
+    </div>
+    <button class="btn ghost" id="close">Cancel</button>
+  `);
+  card.querySelectorAll(".secBtn").forEach(b=>{
+    b.onclick=()=>{ hideCard(); armAudio(); startSection(+b.dataset.i); };
+  });
+  document.getElementById("close").onclick=hideCard;
+}
+
+function finishScreen(){
+  SFX.finish();
+  const total=SECTIONS.reduce((a,s)=>a+s.items.length,0);
+  showCard(`
+    <span class="emoji">🏆</span>
+    <h1>Every section complete</h1>
+    <p>Every one of the <b>${total} standards</b> across A·W·E·S·O·M·E uncovered.</p>
+    <button class="btn" id="review">Review every standard</button>
+    <button class="btn ghost" id="again">Start again</button>
+  `);
+  document.getElementById("review").onclick=()=>{
+    showCard(`
+      <span class="emoji">📋</span>
+      <h1>Every Hamleys Play standard</h1>
+      <ul class="recap">${SECTIONS.map(s=>
+        `<li style="list-style:none;margin-left:-20px"><b style="color:var(--red)">${s.letter} · ${s.name}</b></li>`+
+        s.items.map(t=>`<li><b>${t.title}</b> <span style="color:#A79A8C">${t.q}</span><br>${t.text.replace(/<\/?b>/g,"")}</li>`).join("")
+      ).join("")}</ul>
+      <button class="btn" id="back">Back</button>
+    `);
+    document.getElementById("back").onclick=finishScreen;
+  };
+  document.getElementById("again").onclick=()=>{
+    collected=[]; doneSections=[];
+    hideCard(); startSection(0);
+  };
+}
+
+/* ============================================================
+   8. BOOT
+   ============================================================ */
+buildSection(0);
+try{ if(localStorage.getItem(CONFIG.soundKey)==="0") AUDIO.on=false; }catch(e){}
+setSound(AUDIO.on);
+window.addEventListener("resize", ()=>{
+  const snap=tiles.map(t=>({label:t.label,done:t.done}));
+  const savedMatched=matchedHere;
+  buildSection(secIndex);
+  // restore what was already matched, so a rotation doesn't reset the room
+  tiles.forEach((t,k)=>{ /* order reshuffles on rebuild; re-mark by label */ });
+  const doneLabels=snap.filter(s=>s.done).map(s=>s.label);
+  tiles.forEach(t=>{
+    if(doneLabels.includes(t.label)){ t.done=true; t.el.classList.add("done"); }
+  });
+  matchedHere=savedMatched;
+  updateHead();
+});
+
+welcomeScreen();
+</script>
+</body>
+</html>
